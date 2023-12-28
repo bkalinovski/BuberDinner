@@ -1,13 +1,12 @@
-using BuberDinner.Api.Filters;
 using BuberDinner.Application.Services.Authentication;
 using BuberDinner.Contracts.Authentication;
+using BuberDinner.Domain.Common.Errors;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BuberDinner.Api.Controllers;
 
-[ApiController]
 [Route("auth")]
-public class AuthenticationController : ControllerBase
+public class AuthenticationController : ApiController
 {
     private readonly IAuthenticationService _authenticationService;
 
@@ -25,28 +24,35 @@ public class AuthenticationController : ControllerBase
             request.Email, 
             request.Password);
 
-        var response = new AuthenticationResponse(
-            authResult.User.Id,
-            authResult.User.FirstName,
-            authResult.User.LastName,
-            authResult.User.Email,
-            authResult.Token);
-        
-        return Ok(response);
+        return authResult.Match(
+            response => Ok(MapAuthResponse(response)),
+            Problem);
     }
     
     [HttpPost("login")]
     public IActionResult Login(LoginRequest request)
     {
         var authResult = _authenticationService.Login(request.Email, request.Password);
+
+        if (authResult.IsError && authResult.FirstError == Errors.Authentication.InvalidCredentials)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status401Unauthorized,
+                title: authResult.FirstError.Description);
+        }
         
-        var response = new AuthenticationResponse(
-            authResult.User.Id,
-            authResult.User.FirstName,
-            authResult.User.LastName,
-            authResult.User.Email,
-            authResult.Token);
-        
-        return Ok(response);
+        return authResult.Match(
+            response => Ok(MapAuthResponse(response)),
+            Problem);
+    }
+
+    private AuthenticationResponse MapAuthResponse(AuthenticationResult result)
+    {
+        return new AuthenticationResponse(
+            result.User.Id,
+            result.User.FirstName,
+            result.User.LastName,
+            result.User.Email,
+            result.Token);
     }
 }
