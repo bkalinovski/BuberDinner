@@ -1,4 +1,4 @@
-POST http://localhost:5293/auth/register
+POST {{host}}/auth/register
 Content-Type: application/json
 
 { 

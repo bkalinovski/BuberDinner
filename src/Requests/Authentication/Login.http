@@ -1,7 +1,7 @@
-POST http://localhost:5293/auth/login
+POST {{host}}/auth/login
 Content-Type: application/json
 
 {
   "email": "bkalinovski@mail.ru",
-  "password": "TestPassword#1234"
+  "password": "TestPassword#123"
 }
